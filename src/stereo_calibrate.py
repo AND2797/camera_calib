@@ -2,24 +2,32 @@ import numpy as np
 import cv2
 import glob
 from tqdm import tqdm
-# termination criteria
+import os
 #https://docs.opencv.org/master/dc/dbb/tutorial_py_calibration.html
 class camera_calibrate:
-    def __init__(self, img_size, dims, drawn_path = None):
-        self.dims = dims
+    def __init__(self, img_size, img_path_1 = None, img_path_2 = None, dims= None, drawn_path = None):
         self.img_size = img_size
+        self.img_path_1 = img_path_1 #left
+        self.img_path_2 = img_path_2 #right
+        self.dims = dims
         self.drawn_path = drawn_path
         
     def calibrate(self, refine = 0):
         # import pdb; pdb.set_trace()
         if (refine > 1 or refine < 0):
             raise ValueError('Refine can only be 1 or 0')
+        
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
         objp = np.zeros((self.dims[0]*self.dims[1],3), np.float32)
         objp[:,:2] = np.mgrid[0:self.dims[0], 0:self.dims[1]].T.reshape(-1,2)
         obj_points = []
         img_points = []
-        images = glob.glob("*.png")
+        
+        #use image path - 1
+        if self.img_path_1 == None: #assumes same directory
+            images = glob.glob("*.png")
+        else:
+            images = glob.glob(os.path.join(self.img_path_1,'*.png'))
         
         if images == []:
             raise ValueError('No images found in specified directory.')
@@ -47,31 +55,49 @@ class camera_calibrate:
         cv2.destroyAllWindows()
         print(f"{corners_found} / {len(images)} images calibrated.")
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, self.img_size, None, None)
-        raw = (ret, mtx, dist, rvecs, tvecs)
+        raw = (img_points, obj_points, ret, mtx, dist, rvecs, tvecs)
         
         if (refine):
             new_mtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, self.img_size)
-            refined = (ret, mtx, new_mtx, dist, rvecs, tvecs)
+            refined = (img_points, obj_points, ret, mtx, new_mtx, dist, rvecs, tvecs)
             return refined
         return raw
         
   
-    
-    
-    def stereo_rectify(self, cmtx1, dist1, cmtx2, dist2, R, T):
-        R1, R2, P1, P2, Q, validPixROI1, validPixROI2 = cv2.stereoRectify(cmtx1, dist1, cmtx2, dist2, (1920,1080), R, T)
-        return (R1, R2, P1, P2, Q)
-    
+    @classmethod
+    def stereo_calibrate(cls, camera_1, camera_2):
+        # import pdb;pdb.set_trace()
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5)
+        flags = cv2.CALIB_FIX_INTRINSIC
+        params1 = camera_1.calibrate()
+        params2 = camera_2.calibrate()
+        objpoints = params1[1]
+        imgpoints_1 = params1[0]
+        imgpoints_2 = params2[0]
+        mtx_1 = params1[3]
+        dist_1 = params1[4]
+        mtx_2 = params2[3]
+        dist_2 = params2[4]
+        ret, mtx_1, dist_1, mtx_2, dist_2, R, T, E, F = cv2.stereoCalibrate(objpoints, imgpoints_1, 
+                                                                            imgpoints_2, mtx_1, dist_1, 
+                                                                            mtx_2, dist_2, camera_1.img_size, 
+                                                                            criteria = criteria, flags = flags)
+        R1, R2, P1, P2, Q, validPixROI1, validPixROI2 = cv2.stereoRectify(mtx_1, dist_1, mtx_2, dist_2, camera_1.img_size, R, T)
+
+        return (R, T, E, F, R1, R2, P1, P2, Q)
+
 
             
             
         
 if __name__ == '__main__':
-    camera_model = camera_calibrate(dims = (9,6), img_size = (1920, 1080))
-    params = camera_model.calibrate()
-    '''
-    to do : stereo calibration
-    robustness checks
-    '''
+    camera_model1 = camera_calibrate(img_path_1 = '../left', dims = (9,6), img_size = (1920, 1080))
+    # params1 = camera_model.calibrate()
+    camera_model2 = camera_calibrate(img_path_1 = '../right', dims = (9,6), img_size = (1920, 1080))
+    # params2 = camera_model.calibrate()
+    stereo_params = camera_calibrate.stereo_calibrate(camera_model1, camera_model2)
+
+     
+    
 
     
