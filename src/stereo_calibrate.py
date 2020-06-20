@@ -12,7 +12,7 @@ class camera_calibrate:
         self.dims = dims
         self.drawn_path = drawn_path
         
-    def calibrate(self, refine = 0):
+    def calib(self, refine = 0):
         # import pdb; pdb.set_trace()
         if (refine > 1 or refine < 0):
             raise ValueError('Refine can only be 1 or 0')
@@ -65,12 +65,12 @@ class camera_calibrate:
         
   
     @classmethod
-    def stereo_calibrate(cls, camera_1, camera_2):
+    def stereo_calib(cls, camera_1, camera_2):
         # import pdb;pdb.set_trace()
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5)
         flags = cv2.CALIB_FIX_INTRINSIC
-        params1 = camera_1.calibrate()
-        params2 = camera_2.calibrate()
+        params1 = camera_1.calib()
+        params2 = camera_2.calib()
         objpoints = params1[1]
         imgpoints_1 = params1[0]
         imgpoints_2 = params2[0]
@@ -88,14 +88,7 @@ class camera_calibrate:
 
 
             
-            
-        
-if __name__ == '__main__':
-    camera_model1 = camera_calibrate(img_path_1 = '../left', dims = (9,6), img_size = (1920, 1080))
-    # params1 = camera_model.calibrate()
-    camera_model2 = camera_calibrate(img_path_1 = '../right', dims = (9,6), img_size = (1920, 1080))
-    # params2 = camera_model.calibrate()
-    stereo_params = camera_calibrate.stereo_calibrate(camera_model1, camera_model2)
+    
 
      
     
