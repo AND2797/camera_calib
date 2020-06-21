@@ -15,7 +15,7 @@ pip install camcalib
 ## Instructions
 ### Import 
 ```
-from cam_calib.cam_calib import camera_calibrate
+from cam_calib import camera_calibrate
 ```
 ### Single Camera Calibration
 
