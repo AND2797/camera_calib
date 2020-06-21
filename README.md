@@ -7,7 +7,7 @@ numpy (1.17.4 preferred)
 opencv (3.4.2 preferred)
 tqdm
 ```
-##Installation 
+## Installation 
 ```
 pip install camcalib
 ```
