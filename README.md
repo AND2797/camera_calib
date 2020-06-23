@@ -45,5 +45,5 @@ stereo_params = camera_calibrate.stereo_calib(camera_1, camera_2)
 
 ### TO DO:
 - [ ] Write tests
-- [ ] Update docs
+- [ ] Update docs with detailed information on inputs, return values etc.
 - [ ] Misc. checks
