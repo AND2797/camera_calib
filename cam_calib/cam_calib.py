@@ -25,6 +25,7 @@ class camera_calibrate:
         
         for more details: https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
         returns: 
+        ret: Overall RMS Re-projection error.
         img_points: corresponding corner coordinates in the images
         obj_points: calibration pattern coordinate space
         mtx: camera matrix
