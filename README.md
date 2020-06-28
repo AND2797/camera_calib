@@ -43,6 +43,23 @@ Call the class method `stereo_calib` method on the class `camera_calibrate` by p
 stereo_params = camera_calibrate.stereo_calib(camera_1, camera_2) 
 ```
 
+## Documentation
+
+The API offers two functionalities - `calib`  and `stereo_calib`. 
+
+### camera_calibrate
+
+Main class
+
+### calib
+
+Single camera calibration
+
+### stereo_calib
+
+Calibrating two cameras
+
+`Calib is meant to be used as 
 ### TO DO:
 - [ ] Write tests
 - [ ] Update docs with detailed information on inputs, return values etc.
