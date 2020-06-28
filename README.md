@@ -59,7 +59,7 @@ Single camera calibration
 
 Calibrating two cameras
 
-`Calib is meant to be used as 
+
 ### TO DO:
 - [ ] Write tests
 - [ ] Update docs with detailed information on inputs, return values etc.
