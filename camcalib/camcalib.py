@@ -5,7 +5,7 @@ from tqdm import tqdm
 import os
 ''' for finer implementation details:  https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html'''
 class camera_calibrate:
-    def __init__(self, img_size, img_path = None, dims= None, drawn_path = None, common_id = None):
+    def __init__(self, img_size, dims, **kwargs):
         '''
         img_size: specify image resolution in pixels (width, height)
         img_path_1: specify image path (absolute or relative) for camera 1
@@ -14,17 +14,17 @@ class camera_calibrate:
         common_id: common suffix for saved images
         '''
         self.img_size = img_size
-        self.img_path = img_path
         self.dims = dims
-        self.drawn_path = drawn_path
-        self.common_id = common_id
+        self.img_path = kwargs.get('img_path', None)
+        self.drawn_path = kwargs.get('drawn_path', None)
+        self.common_id = kwargs.get('common_id', None)
         
-    def calib(self, display = 1, criteria = None):
+    def calib(self, criteria = None, **kwargs):
         '''
         display: 1(default, show calibrated images during exec), 0(don't show images)
         
         for more details: https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
-        returns: 
+        returns: cam parameters
         ret: Overall RMS Re-projection error.
         img_points: corresponding corner coordinates in the images
         obj_points: calibration pattern coordinate space
@@ -34,18 +34,17 @@ class camera_calibrate:
         tvecs: output vector of translation vectors
         '''
         
-        if (display > 1 or display < 0):
-            raise ValueError('display can only be 1 or 0')
-        
-        if criteria == None:
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        display = kwargs.get('display', False)
+        #HANDLE ERROR IF OTHER THAN BOOLEAN
+
+        criteria = kwargs.get('criteria', (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001))
         objp = np.zeros((self.dims[0]*self.dims[1],3), np.float32)
         objp[:,:2] = np.mgrid[0:self.dims[0], 0:self.dims[1]].T.reshape(-1,2)
         obj_points = []
         img_points = []
         
         #use image path - 1
-        if self.img_path == None: #assumes same directory
+        if self.img_path is None: #assumes same directory
             images = glob.glob("*.png")
         else:
             images = glob.glob(os.path.join(self.img_path,'*.png'))
@@ -53,7 +52,6 @@ class camera_calibrate:
         if images == []:
             raise ValueError('No images found in specified directory.')
         corners_found = 0
-        # print(f"{len(images)} images found.\n")
         for fname in tqdm(range(len(images)), position = 0, leave = True, total = len(images)):
             im_name = images[fname]
             img = cv2.imread(im_name)
