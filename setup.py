@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="camcalib",
-    version="1.0.4",
+    version="1.0.5",
     description="A wrapper around the main functionalities offered by OpenCV for camera calibration for cleaner and maintainable calibration routines.",
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -16,7 +16,7 @@ setup(
     author="Aditya Narayan Das",
     author_email="aditya.das2797@gmail.com",
     license="MIT",
-    packages=["cam_calib"],
+    packages=["camcalib"],
     include_package_data=True,
     install_requires=["numpy","tqdm","opencv-python","opencv-contrib-python"],
 )
