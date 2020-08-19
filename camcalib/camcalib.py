@@ -3,6 +3,8 @@ import cv2
 import glob
 from tqdm import tqdm
 import os
+from multiprocessing import Pool, Process, Manager, Value
+from itertools import product
 ''' for finer implementation details:  https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html'''
 class camera_calibrate:
     def __init__(self, img_size, dims, **kwargs):
@@ -18,7 +20,29 @@ class camera_calibrate:
         self.img_path = kwargs.get('img_path', None)
         self.drawn_path = kwargs.get('drawn_path', None)
         self.common_id = kwargs.get('common_id', None)
-        
+
+    def _mp_calib(self, fname,  objp, criteria, display):
+            img = cv2.imread(fname)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_points = []
+            obj_points = []
+            ret, corners = cv2.findChessboardCorners(gray, (self.dims[0], self.dims[1]), None)
+            
+            if ret is True:
+                obj_points.append(objp)
+                
+                corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
+                img_points.append(corners)
+                
+                cv2.drawChessboardCorners(img, (self.dims[0], self.dims[1]),
+                                            corners2, ret)
+                if (display):    
+                    cv2.imshow('img', img)
+                if self.drawn_path is not None:
+                    cv2.imwrite(self.drawn_path + f'/detected_{fname}_{self.common_id}.png', img)
+                cv2.waitKey(500)
+            return obj_points, img_points 
+
     def calib(self, criteria = None, **kwargs):
         '''
         display: 1(default, show calibrated images during exec), 0(don't show images)
@@ -48,36 +72,60 @@ class camera_calibrate:
             images = glob.glob("*.png")
         else:
             images = glob.glob(os.path.join(self.img_path,'*.png'))
-        
-        if images == []:
-            raise ValueError('No images found in specified directory.')
-        corners_found = 0
-        for fname in tqdm(range(len(images)), position = 0, leave = True, total = len(images)):
-            im_name = images[fname]
-            img = cv2.imread(im_name)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if not images:
+            raise FileNotFoundError('No files found')
+            # raise ValueError('No images found in specified directory.')
+        mp_params = kwargs.get('mp_params', (False, 0))
             
-            ret, corners = cv2.findChessboardCorners(gray, (self.dims[0], self.dims[1]), None)
-            
-            if ret == True:
-                obj_points.append(objp)
-                
-                corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
-                img_points.append(corners)
-                
-                cv2.drawChessboardCorners(img, (self.dims[0], self.dims[1]),
-                                               corners2, ret)
-                if (display):    
-                    cv2.imshow('img', img)
-                if self.drawn_path != None:
-                    # import pdb; pdb.set_trace()
-                    cv2.imwrite(self.drawn_path + f'/detected_{fname}_{self.common_id}.png', img)
-                cv2.waitKey(500)
-                corners_found += 1
+        if (mp_params[0]): #mp_flag
+            # fnames = []
+            # for fname in range(len(images)):
+            #     im_name = images[fname]
+            #     img = cv2.imread(im_name)
+            #     all_images.append(img)
         
-        cv2.destroyAllWindows()
-        print(f"{corners_found} / {len(images)} images calibrated.")
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, self.img_size, None, None)
+                        # corners_found += 1
+            with Pool(5) as p:
+                # import pdb; pdb.set_trace()
+                criteria = [criteria]
+                objp = [objp]
+                display = [display]
+                results = p.starmap(self._mp_calib, product(images, objp, criteria, display))
+                obj_points = [np.array(res[0]).squeeze() for res in results]
+                img_points = [np.array(res[1]).squeeze(axis = 0) for res in results]
+                # import pdb; pdb.set_trace()
+                ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, self.img_size, None, None)
+
+        else:
+            corners_found = 0
+            # import pdb; pdb.set_trace()
+            for fname in tqdm(range(len(images)), position = 0, leave = True, total = len(images)):
+                im_name = images[fname]
+                img = cv2.imread(im_name)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                
+                ret, corners = cv2.findChessboardCorners(gray, (self.dims[0], self.dims[1]), None)
+                
+                if ret is True:
+                    obj_points.append(objp)
+                    
+                    corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
+                    img_points.append(corners)
+                    
+                    cv2.drawChessboardCorners(img, (self.dims[0], self.dims[1]),
+                                                corners2, ret)
+                    if (display):    
+                        cv2.imshow('img', img)
+                    if self.drawn_path is not None:
+                        # import pdb; pdb.set_trace()
+                        cv2.imwrite(self.drawn_path + f'/detected_{fname}_{self.common_id}.png', img)
+                    cv2.waitKey(500)
+                    corners_found += 1
+            
+            cv2.destroyAllWindows()
+            print(f"{corners_found} / {len(images)} images calibrated.")
+            # import pdb; pdb.set_trace()
+            ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, self.img_size, None, None)
         
         return {'img_points':img_points, 'obj_points':obj_points, 'mtx':mtx, 'dist':dist, 'rvecs':rvecs, 'tvecs':tvecs}
         
