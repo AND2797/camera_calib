@@ -7,11 +7,12 @@ numpy (1.17.4 preferred)
 opencv (3.4.2 preferred)
 tqdm
 ```
+##Updates!
+- Multiprocessing powered camera calibration in the works!
 ## Installation 
 ```
 pip install camcalib
 ```
-
 ## Instructions
 ### Import 
 ```
