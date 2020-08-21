@@ -11,7 +11,8 @@ tqdm
 ```
 pip install camcalib
 ```
-
+## Update
+- Multiprocessing powered camera calibration in the works!
 ## Instructions
 ### Import 
 ```
